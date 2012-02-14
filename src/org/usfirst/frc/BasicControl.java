@@ -9,6 +9,7 @@ import javax.microedition.midlet.MIDletStateChangeException;
 //import org.mclv.test.Jaguar; //@TODO CHANGE TO WPI JAGUAR BEFORE RUNNING!!
 import edu.wpi.first.wpilibj.Jaguar;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.camera.AxisCamera;
 
 /**
@@ -24,8 +25,8 @@ public class BasicControl extends MIDlet {
     private static final int LEFT = 0;
     private static final int RIGHT = 1;
     private static final int AUX = 2;
-    private static final int DRIVE_AXIS = 1;
-    private static final boolean[] DRIVE_INV = {false,false};
+    private static final int DRIVE_AXIS = 2;
+    private static final boolean[] DRIVE_INV = {false,true};
     private static final int[] INTAKE_AXIS = {LEFT,TRIM_INDEX};
     private static final int[] INTAKE_IN = {LEFT,2};
     private static final int[] INTAKE_OUT = {LEFT,3};
@@ -45,6 +46,10 @@ public class BasicControl extends MIDlet {
     private static final int[] SHOOT_AXIS = {RIGHT,TRIM_INDEX};
     private static final double SHOOT_VAL = 1;
     private static final boolean SHOOT_INV = false;
+    private static final boolean BRAKES = false;
+    private static final int[] RAMP_OUT = {AUX,5};
+    private static final int[] RAMP_IN = {AUX,6};
+    private static final int[] BRAKE_DEPLOY = {AUX,7};
     private static final long PERIOD = 10;
     // END CONFIG PARAMS
     private boolean live = true;
@@ -54,6 +59,8 @@ public class BasicControl extends MIDlet {
     private Jaguar aimJag;
     private Joystick[] driveJoys;
     private Joystick aux;
+    private Solenoid[][] rampSols;
+    private Solenoid[][] brakeSols;
     private boolean useCam = false;
     private AxisCamera cam;
     protected void startApp() throws MIDletStateChangeException {
@@ -61,6 +68,8 @@ public class BasicControl extends MIDlet {
         shootJags = new Jaguar[2];
         feedJags = new Jaguar[2];
         driveJoys = new Joystick[2];
+        rampSols = new Solenoid[2][2];
+        brakeSols = new Solenoid[2][2];
         String u = "USB Assignment\n";
         String p = "PWM Assignment\n";
         int pwm = 1;
@@ -99,6 +108,20 @@ public class BasicControl extends MIDlet {
             p += pwm +": Feed Jaguar\n";
             pwm++;
         }
+        int sol = 1;
+        for(int i = 0; i<2; i++){
+            for(int j = 0; j<2; j++){
+                rampSols[i][j] = new Solenoid(sol);
+                if(BRAKES){
+                    brakeSols[i][j] = new Solenoid(sol + 2);
+                }
+                sol++;
+            }
+        }
+        setRamp();
+        if(BRAKES){
+            setBrake();
+        }
         aimJag = new Jaguar(pwm);
         p += pwm +": Aim Jaguar\n";
         aux = new Joystick(usb);
@@ -129,6 +152,26 @@ public class BasicControl extends MIDlet {
         aim();
         feed();
         shoot();
+        ramp();
+        if(BRAKES){
+            brakes();
+        }
+    }
+    private void brakes(){
+        if(getButton(BRAKE_DEPLOY)){
+            setBrake(true);
+        }
+        else{
+            setBrake(false);
+        }
+    }
+    private void ramp(){
+        if(getButton(RAMP_OUT)){
+            setRamp(true);
+        }
+        if(getButton(RAMP_IN)){
+            setRamp(false);
+        }
     }
     private void intake(){
         if(getButton(INTAKE_IN)){
@@ -182,6 +225,34 @@ public class BasicControl extends MIDlet {
             return driveJoys[axis[0]].getRawAxis(axis[1]);
         }
         return aux.getRawAxis(axis[1]);
+    }
+    private void setBrake(){
+        for(int i = 0; i<brakeSols.length; i++){
+            setBrake(i,false);
+        }
+    }
+    private void setBrake(boolean val){
+        for(int i = 0; i<brakeSols.length; i++){
+            setBrake(i,val);
+        }
+    }
+    private void setBrake(int i, boolean val){
+        brakeSols[i][0].set(val);
+        brakeSols[i][1].set(!val);
+    }
+    private void setRamp(){
+        for(int i = 0; i<rampSols.length; i++){
+            setRamp(i,false);
+        }
+    }
+    private void setRamp(boolean val){
+        for(int i = 0; i<rampSols.length; i++){
+            setRamp(i,val);
+        }
+    }
+    private void setRamp(int i, boolean val){
+        rampSols[i][0].set(val);
+        rampSols[i][1].set(!val);
     }
     private void setShoot(){
         setShoot(getAxis(SHOOT_AXIS));

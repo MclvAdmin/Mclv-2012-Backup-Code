@@ -15,6 +15,6 @@ public class Jaguar { //DUMMYJAG
         this.port = port;
     }
     public void set(double val){
-        //System.out.println("Jaguar\nID\tOutput\n" + port + "\t" + val);
+        System.out.println("Jaguar\nID\tOutput\n" + port + "\t" + val);
     }
 }
